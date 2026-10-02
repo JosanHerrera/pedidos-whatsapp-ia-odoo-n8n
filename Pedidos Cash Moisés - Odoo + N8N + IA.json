@@ -1,0 +1,673 @@
+{
+  "name": "Pedidos Cash Moisés - Odoo + N8N + IA",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "com.twilio.messaging.inbound-message.received"
+        ]
+      },
+      "type": "n8n-nodes-base.twilioTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -512
+      ],
+      "id": "6773cfbc-8e76-4eb9-8feb-65e7ef69c23d",
+      "name": "Twilio Trigger",
+      "webhookId": "cb445be0-35ce-498b-82c8-7446da90caf3",
+      "credentials": {
+        "twilioApi": {
+          "id": "UHqMvzeGjnDAScEZ",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "TU_CLAVE_API_AQUI"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"claude-sonnet-4-5\",\n  max_tokens: 1000,\n  messages: [\n    {\n      role: \"user\",\n      content: `Extrae los productos y cantidades de este pedido de un cliente de un supermercado mayorista español. Para cada producto, incluye un \"termino_busqueda\" con las palabras clave para buscarlo en una base de datos, en singular, sin marca y sin tamaño. IMPORTANTE: si el cliente menciona un tipo, variedad o adjetivo (por ejemplo \"entera\", \"desnatada\", \"integral\", \"serrano\", \"girasol\", \"oliva\", \"sin alcohol\"), consérvalo siempre en el término de búsqueda, porque distingue entre productos similares. Escribe siempre con las tildes correctas del español. Responde ÚNICAMENTE con un JSON válido, sin texto adicional, con este formato exacto: {\"productos\": [{\"nombre\": \"...\", \"cantidad\": N, \"termino_busqueda\": \"...\"}]}. Ejemplos: \"3 cajas de agua mineral\" -> {\"nombre\": \"agua mineral\", \"cantidad\": 3, \"termino_busqueda\": \"agua mineral\"}. \"20 leches enteras\" -> {\"nombre\": \"leche entera\", \"cantidad\": 20, \"termino_busqueda\": \"leche entera\"}. \"5 jamones serranos\" -> {\"nombre\": \"jamón serrano\", \"cantidad\": 5, \"termino_busqueda\": \"jamón serrano\"}. Pedido del cliente: \"${$json.Body}\"`\n    }\n  ]\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -208,
+        -272
+      ],
+      "id": "841f0517-6371-4dc8-824c-c68abf743a0b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const catalogo = [{\"code\": \"CM0001\", \"name\": \"Agua Mineral 1.5L Pack 6\"}, {\"code\": \"CM0002\", \"name\": \"Refresco Cola 2L\"}, {\"code\": \"CM0003\", \"name\": \"Cerveza Lager Pack 24\"}, {\"code\": \"CM0004\", \"name\": \"Zumo Naranja 1L\"}, {\"code\": \"CM0005\", \"name\": \"Vino Tinto Crianza 75cl\"}, {\"code\": \"CM0006\", \"name\": \"Refresco Naranja 2L\"}, {\"code\": \"CM0007\", \"name\": \"Cerveza Sin Alcohol Pack 6\"}, {\"code\": \"CM0008\", \"name\": \"Tónica Pack 4\"}, {\"code\": \"CM0009\", \"name\": \"Bebida Energética Lata\"}, {\"code\": \"CM0010\", \"name\": \"Café Molido Natural 250g\"}, {\"code\": \"CM0011\", \"name\": \"Atún en Aceite Pack 3\"}, {\"code\": \"CM0012\", \"name\": \"Tomate Frito 780g\"}, {\"code\": \"CM0013\", \"name\": \"Legumbre Cocida Garbanzos 400g\"}, {\"code\": \"CM0014\", \"name\": \"Legumbre Cocida Lentejas 400g\"}, {\"code\": \"CM0015\", \"name\": \"Aceitunas Verdes 300g\"}, {\"code\": \"CM0016\", \"name\": \"Maíz Dulce Lata 300g\"}, {\"code\": \"CM0017\", \"name\": \"Mejillones en Escabeche\"}, {\"code\": \"CM0018\", \"name\": \"Sardinas en Aceite Pack 3\"}, {\"code\": \"CM0019\", \"name\": \"Pimientos del Piquillo\"}, {\"code\": \"CM0020\", \"name\": \"Melocotón en Almíbar\"}, {\"code\": \"CM0021\", \"name\": \"Detergente Líquido 40 Dosis\"}, {\"code\": \"CM0022\", \"name\": \"Lejía 5L\"}, {\"code\": \"CM0023\", \"name\": \"Suavizante 3L\"}, {\"code\": \"CM0024\", \"name\": \"Papel Higiénico Pack 12\"}, {\"code\": \"CM0025\", \"name\": \"Rollo Cocina Pack 6\"}, {\"code\": \"CM0026\", \"name\": \"Friegasuelos 1L\"}, {\"code\": \"CM0027\", \"name\": \"Lavavajillas Mano 1.5L\"}, {\"code\": \"CM0028\", \"name\": \"Bolsas Basura 30L Pack 30\"}, {\"code\": \"CM0029\", \"name\": \"Estropajo Pack 5\"}, {\"code\": \"CM0030\", \"name\": \"Limpiacristales 750ml\"}, {\"code\": \"CM0031\", \"name\": \"Croquetas Jamón 1kg\"}, {\"code\": \"CM0032\", \"name\": \"Pizza Congelada Familiar\"}, {\"code\": \"CM0033\", \"name\": \"Verdura Mixta Congelada 1kg\"}, {\"code\": \"CM0034\", \"name\": \"Merluza en Filetes 1kg\"}, {\"code\": \"CM0035\", \"name\": \"Gambas Peladas 500g\"}, {\"code\": \"CM0036\", \"name\": \"Helado Vainilla 1L\"}, {\"code\": \"CM0037\", \"name\": \"Patatas Fritas Congeladas 1kg\"}, {\"code\": \"CM0038\", \"name\": \"Pollo Empanado 1kg\"}, {\"code\": \"CM0039\", \"name\": \"Calamares a la Romana 500g\"}, {\"code\": \"CM0040\", \"name\": \"Alitas de Pollo Congeladas 1kg\"}, {\"code\": \"CM0041\", \"name\": \"Jamón Serrano Loncheado 100g\"}, {\"code\": \"CM0042\", \"name\": \"Chorizo Ibérico 250g\"}, {\"code\": \"CM0043\", \"name\": \"Queso Curado Cuña 300g\"}, {\"code\": \"CM0044\", \"name\": \"Mortadela 200g\"}, {\"code\": \"CM0045\", \"name\": \"Salchichón 250g\"}, {\"code\": \"CM0046\", \"name\": \"Bacon Loncheado 200g\"}, {\"code\": \"CM0047\", \"name\": \"Lomo Embuchado 150g\"}, {\"code\": \"CM0048\", \"name\": \"Queso en Lonchas 300g\"}, {\"code\": \"CM0049\", \"name\": \"Pavo Loncheado 200g\"}, {\"code\": \"CM0050\", \"name\": \"Paté Ibérico 125g\"}, {\"code\": \"CM0051\", \"name\": \"Leche Entera 1L Pack 6\"}, {\"code\": \"CM0052\", \"name\": \"Yogur Natural Pack 8\"}, {\"code\": \"CM0053\", \"name\": \"Nata para Cocinar 200ml\"}, {\"code\": \"CM0054\", \"name\": \"Mantequilla 250g\"}, {\"code\": \"CM0055\", \"name\": \"Queso Fresco Batido 400g\"}, {\"code\": \"CM0056\", \"name\": \"Leche Semidesnatada 1L Pack 6\"}, {\"code\": \"CM0057\", \"name\": \"Natillas Pack 4\"}, {\"code\": \"CM0058\", \"name\": \"Flan Huevo Pack 4\"}, {\"code\": \"CM0059\", \"name\": \"Queso Rallado 200g\"}, {\"code\": \"CM0060\", \"name\": \"Leche Sin Lactosa 1L\"}, {\"code\": \"CM0061\", \"name\": \"Pan de Molde Integral\"}, {\"code\": \"CM0062\", \"name\": \"Pan de Molde Blanco\"}, {\"code\": \"CM0063\", \"name\": \"Magdalenas Pack 12\"}, {\"code\": \"CM0064\", \"name\": \"Bollería Croissant Pack 6\"}, {\"code\": \"CM0065\", \"name\": \"Tostadas Pack 24\"}, {\"code\": \"CM0066\", \"name\": \"Barra de Pan Congelada Pack 4\"}, {\"code\": \"CM0067\", \"name\": \"Galletas María Pack Familiar\"}, {\"code\": \"CM0068\", \"name\": \"Galletas Chocolate Pack\"}, {\"code\": \"CM0069\", \"name\": \"Rosquillas Pack 8\"}, {\"code\": \"CM0070\", \"name\": \"Pan Rallado 500g\"}, {\"code\": \"CM0071\", \"name\": \"Gel de Ducha 750ml\"}, {\"code\": \"CM0072\", \"name\": \"Champú Familiar 750ml\"}, {\"code\": \"CM0073\", \"name\": \"Pasta de Dientes Pack 2\"}, {\"code\": \"CM0074\", \"name\": \"Desodorante Spray Pack 2\"}, {\"code\": \"CM0075\", \"name\": \"Compresas Pack 20\"}, {\"code\": \"CM0076\", \"name\": \"Pañal Talla 4 Pack 44\"}, {\"code\": \"CM0077\", \"name\": \"Toallitas Húmedas Pack 3\"}, {\"code\": \"CM0078\", \"name\": \"Jabón de Manos 500ml\"}, {\"code\": \"CM0079\", \"name\": \"Cuchillas Afeitar Pack 5\"}, {\"code\": \"CM0080\", \"name\": \"Colonia Infantil 250ml\"}, {\"code\": \"CM0081\", \"name\": \"Patatas Fritas Bolsa Grande\"}, {\"code\": \"CM0082\", \"name\": \"Frutos Secos Mix 500g\"}, {\"code\": \"CM0083\", \"name\": \"Palomitas Microondas Pack 3\"}, {\"code\": \"CM0084\", \"name\": \"Aceitunas Rellenas 300g\"}, {\"code\": \"CM0085\", \"name\": \"Chocolate con Leche Tableta\"}, {\"code\": \"CM0086\", \"name\": \"Barritas de Cereales Pack 6\"}, {\"code\": \"CM0087\", \"name\": \"Nachos con Queso Bolsa\"}, {\"code\": \"CM0088\", \"name\": \"Gominolas Bolsa 1kg\"}, {\"code\": \"CM0089\", \"name\": \"Almendras Fritas 200g\"}, {\"code\": \"CM0090\", \"name\": \"Regaliz Bolsa 500g\"}, {\"code\": \"CM0091\", \"name\": \"Aceite de Oliva Virgen Extra 1L\"}, {\"code\": \"CM0092\", \"name\": \"Aceite de Girasol 1L\"}, {\"code\": \"CM0093\", \"name\": \"Vinagre de Vino 500ml\"}, {\"code\": \"CM0094\", \"name\": \"Mayonesa 450ml\"}, {\"code\": \"CM0095\", \"name\": \"Ketchup 500ml\"}, {\"code\": \"CM0096\", \"name\": \"Mostaza 250ml\"}, {\"code\": \"CM0097\", \"name\": \"Salsa Barbacoa 300ml\"}, {\"code\": \"CM0098\", \"name\": \"Alioli 250ml\"}, {\"code\": \"CM0099\", \"name\": \"Sal Fina 1kg\"}, {\"code\": \"CM0100\", \"name\": \"Especias Mix Pack 4\"}];\n\nfunction normalizar(texto) {\n  return texto.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n}\n\nfunction coincidePalabra(a, b) {\n  const min = Math.min(a.length, b.length);\n  if (min < 3) return a === b;\n  return a.startsWith(b) || b.startsWith(a);\n}\n\nfunction mejorCoincidencia(termino) {\n  const palabras = normalizar(termino).split(/\\s+/);\n  let mejor = null;\n  let mejorPuntos = 0;\n  for (const prod of catalogo) {\n    const nombreWords = normalizar(prod.name).split(/\\s+/);\n    const coincide = palabras.filter(w => nombreWords.some(nw => coincidePalabra(nw, w))).length;\n    if (coincide === palabras.length && coincide > mejorPuntos) {\n      mejorPuntos = coincide;\n      mejor = prod;\n    }\n  }\n  return mejor;\n}\n\nconst textoRespuesta = $input.first().json.content[0].text;\nconst jsonLimpio = textoRespuesta.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\nconst datos = JSON.parse(jsonLimpio);\n\nreturn datos.productos.map(p => {\n  const mejor = mejorCoincidencia(p.termino_busqueda);\n  const numero = mejor ? parseInt(mejor.code.slice(2), 10) : null;\n  const product_id = numero ? numero + 143 : null;\n\n  return {\n    ...p,\n    product_id,\n    producto_catalogo: mejor ? mejor.name : null,\n    default_code: mejor ? mejor.code : null\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -272
+      ],
+      "id": "754558ea-23d8-462d-b37f-013a00d06331",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8069/jsonrpc",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  jsonrpc: \"2.0\",\n  method: \"call\",\n  params: {\n    service: \"object\",\n    method: \"execute_kw\",\n    args: [\n      \"aviserrano_demo\",\n      2,\n      \"b8e7c4e081d7be926ee6ec1466ac94b1c1fdae21\",\n      \"product.product\",\n      \"search_read\",\n      [[[\"id\", \"=\", $json.product_id]]],\n      {\n        \"fields\": [\"id\", \"name\", \"default_code\", \"qty_available\", \"list_price\"],\n        \"context\": {\"location\": 8}\n      }\n    ]\n  },\n  id: 1\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        -272
+      ],
+      "id": "d5153013-dfe3-462d-a8da-514d6dcbfb6d",
+      "name": "Odoo - Buscar producto"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "26b976d1-5538-4672-8790-5a74e2e5f8ed",
+              "name": "product_id",
+              "value": "={{ $json.result[0].id }}",
+              "type": "string"
+            },
+            {
+              "id": "f8172dd2-a899-4f00-a24f-0170b101508e",
+              "name": "producto",
+              "value": "={{ $json.result[0].name }}",
+              "type": "string"
+            },
+            {
+              "id": "920f9695-1c28-41b2-9483-7660d2da47d7",
+              "name": "stock",
+              "value": "={{ $json.result[0].qty_available }}",
+              "type": "string"
+            },
+            {
+              "id": "1cee44e3-d39f-4b1f-885e-c2f04679aac2",
+              "name": "precio",
+              "value": "={{ $json.result[0].list_price }}",
+              "type": "string"
+            },
+            {
+              "id": "0a47370c-dfc9-4f41-8c3f-6889a538eb1a",
+              "name": "cantidad_pedida",
+              "value": "={{ $('Code in JavaScript').item.json.cantidad }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        -272
+      ],
+      "id": "1d60ca0d-524b-4e94-8a13-b0b9a1fca036",
+      "name": "Preparar línea de pedido"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d5c5ccc9-1ace-4833-846e-2818459d871a",
+              "leftValue": "={{ $json.stock }}",
+              "rightValue": "={{ $('Code in JavaScript').item.json.cantidad }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -272
+      ],
+      "id": "a678f12d-1544-40d1-9ad9-bfcf6170b815",
+      "name": "¿Hay stock suficiente?"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -512
+      ],
+      "id": "eb4580ad-b6fd-4d67-a583-cc5a2b383091",
+      "name": "Juntar líneas con stock"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lineas = $input.first().json.data;\nconst API_KEY = \"TU_CLAVE_API_AQUI\";\n\nconst order_line = lineas.map(l => [0, 0, {\n  product_id: Number(l.product_id),\n  name: l.producto,\n  product_uom_qty: Number(l.cantidad_pedida)\n}]);\n\nconst requestBody = {\n  jsonrpc: \"2.0\",\n  method: \"call\",\n  params: {\n    service: \"object\",\n    method: \"execute_kw\",\n    args: [\n      \"aviserrano_demo\",\n      2,\n      API_KEY,\n      \"sale.order\",\n      \"create\",\n      [{ partner_id: 14, order_line: order_line }]\n    ]\n  },\n  id: 1\n};\n\nreturn { requestBody: JSON.stringify(requestBody) };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -512
+      ],
+      "id": "b941c8a3-1b7b-4560-9564-d7d2c9f81a0a",
+      "name": "Construir pedido de venta"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8069/jsonrpc",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1472,
+        -512
+      ],
+      "id": "290a48c8-0f89-4dc9-a630-13c61766bf68",
+      "name": "Odoo - Crear pedido de venta"
+    },
+    {
+      "parameters": {
+        "jsCode": "const pedidoId = $input.first().json.result;\nconst lineas = $('Juntar líneas con stock').first().json.data;\n\nlet total = 0;\nlet detalle = '';\nfor (const l of lineas) {\n  const subtotal = Number(l.precio) * Number(l.cantidad_pedida);\n  total += subtotal;\n  detalle += `• ${l.cantidad_pedida} x ${l.producto} - ${subtotal.toFixed(2)} €\\n`;\n}\n\nconst mensaje = `✅ Pedido recibido - Cash Moisés\\n\\n${detalle}\\nTotal (sin IVA): ${total.toFixed(2)} €\\nPedido nº ${pedidoId}\\n\\nGracias por tu compra.`;\n\nreturn { mensaje };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -512
+      ],
+      "id": "6a3e5a43-86c7-4321-a40e-20797952efe2",
+      "name": "Mensaje de confirmación"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "=+{{ $('Twilio Trigger').first().json.WaId }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.mensaje }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        -384
+      ],
+      "id": "cfc6f6cf-bde0-40fc-94d9-b2c21f53c542",
+      "name": "Twilio - Confirmar pedido",
+      "credentials": {
+        "twilioApi": {
+          "id": "UHqMvzeGjnDAScEZ",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -112
+      ],
+      "id": "ea0c33fa-514b-4bf6-8ac4-e8d5c3e92eca",
+      "name": "Juntar líneas sin stock"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lineas = $input.first().json.data;\nconst API_KEY = \"b8e7c4e081d7be926ee6ec1466ac94b1c1fdae21\";\n\nconst fecha = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)\n  .toISOString().replace('T', ' ').slice(0, 19);\n\nconst order_line = lineas.map(l => [0, 0, {\n  product_id: Number(l.product_id),\n  name: l.producto,\n  product_qty: Number(l.cantidad_pedida) - Number(l.stock),\n  price_unit: Number((Number(l.precio) * 0.6).toFixed(2)),\n  date_planned: fecha\n}]);\n\nconst requestBody = {\n  jsonrpc: \"2.0\",\n  method: \"call\",\n  params: {\n    service: \"object\",\n    method: \"execute_kw\",\n    args: [\n      \"aviserrano_demo\",\n      2,\n      API_KEY,\n      \"purchase.order\",\n      \"create\",\n      [{ partner_id: 47, order_line: order_line }]\n    ]\n  },\n  id: 1\n};\n\nreturn { requestBody: JSON.stringify(requestBody) };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -112
+      ],
+      "id": "a078f0c8-8136-40da-8bd3-0632fb6c67a7",
+      "name": "Construir orden de compra"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8069/jsonrpc",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1536,
+        -112
+      ],
+      "id": "768c6e60-a635-45c4-9427-8f265efea5e4",
+      "name": "Odoo - Crear orden de compra"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ordenId = $input.first().json.result;\nconst lineas = $('Juntar líneas sin stock').first().json.data;\n\nlet detalle = '';\nfor (const l of lineas) {\n  detalle += `• ${l.producto}: pediste ${l.cantidad_pedida}, disponibles ${l.stock}\\n`;\n}\n\nconst mensaje = `⚠️ Cash Moisés - Stock insuficiente\\n\\nNo hemos podido servir estos productos completos:\\n${detalle}\\nHemos pedido la reposición a nuestro proveedor (orden nº ${ordenId}). Llegará en unos 3 días y te avisaremos.\\n\\nDisculpa las molestias.`;\n\nreturn { mensaje };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        -112
+      ],
+      "id": "44752d2b-241d-44fc-883a-d5776441eaea",
+      "name": "Mensaje de falta de stock"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "=+{{ $('Twilio Trigger').first().json.WaId }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.mensaje }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        -224
+      ],
+      "id": "3545bc42-0abf-4b5c-be5c-cb08c74d6c25",
+      "name": "Twilio - Avisar falta de stock",
+      "credentials": {
+        "twilioApi": {
+          "id": "UHqMvzeGjnDAScEZ",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ordenId = $('Odoo - Crear orden de compra').first().json.result;\nconst lineas = $('Juntar líneas sin stock').first().json.data;\nconst cliente = $('Twilio Trigger').first().json.ProfileName || 'Cliente';\n\nlet filas = '';\nfor (const l of lineas) {\n  const reponer = Number(l.cantidad_pedida) - Number(l.stock);\n  filas += `\n    <tr>\n      <td style=\"padding: 8px; border: 1px solid #ddd;\">${l.producto}</td>\n      <td style=\"padding: 8px; border: 1px solid #ddd; text-align: center;\">${l.cantidad_pedida}</td>\n      <td style=\"padding: 8px; border: 1px solid #ddd; text-align: center;\">${l.stock}</td>\n      <td style=\"padding: 8px; border: 1px solid #ddd; text-align: center; color: #d32f2f; font-weight: bold;\">${reponer}</td>\n    </tr>`;\n}\n\nconst html = `\n  <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n    <div style=\"background-color: #e65100; color: white; padding: 20px; text-align: center;\">\n      <h2 style=\"margin: 0;\">📦 Reposición necesaria</h2>\n      <p style=\"margin: 5px 0 0 0;\">Cash Moisés - Orden de compra nº ${ordenId}</p>\n    </div>\n    <div style=\"padding: 20px; background-color: #f9f9f9;\">\n      <p>Un pedido de <strong>${cliente}</strong> por WhatsApp no se ha podido servir completo. Se ha generado una orden de compra al proveedor <strong>Distribuciones Sevilla Mayorista</strong>.</p>\n      <table style=\"width: 100%; border-collapse: collapse; margin-top: 15px;\">\n        <thead>\n          <tr style=\"background-color: #333; color: white;\">\n            <th style=\"padding: 10px; text-align: left;\">Producto</th>\n            <th style=\"padding: 10px;\">Pedido</th>\n            <th style=\"padding: 10px;\">Stock</th>\n            <th style=\"padding: 10px;\">A reponer</th>\n          </tr>\n        </thead>\n        <tbody>${filas}</tbody>\n      </table>\n    </div>\n    <div style=\"padding: 15px; text-align: center; color: #888; font-size: 12px;\">\n      Generado automáticamente por n8n + Odoo\n    </div>\n  </div>`;\n\nconst asunto = `📦 Reposición - Orden de compra nº ${ordenId}`;\n\nreturn { html, asunto };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -112
+      ],
+      "id": "f9739156-061b-4ae2-bddf-1c3e9186fa73",
+      "name": "Email a compras"
+    },
+    {
+      "parameters": {
+        "sendTo": "pruebasn8nunitarias@gmail.com",
+        "subject": "={{ $json.asunto }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2432,
+        -112
+      ],
+      "id": "e7f799ee-d7e7-42e0-a6d6-4164a1dfc1a8",
+      "name": "Gmail - Avisar a compras",
+      "webhookId": "60adf80f-8458-4082-83eb-cd682caedeaf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "FrqaGsopIuqP2Cud",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const pedidoId = $('Odoo - Crear pedido de venta').first().json.result;\nconst lineas = $('Juntar líneas con stock').first().json.data;\nconst cliente = $('Twilio Trigger').first().json.ProfileName || 'Cliente';\n\nlet total = 0;\nlet filas = '';\nfor (const l of lineas) {\n  const subtotal = Number(l.precio) * Number(l.cantidad_pedida);\n  total += subtotal;\n  filas += `\n    <tr>\n      <td style=\"padding: 8px; border: 1px solid #ddd;\">${l.producto}</td>\n      <td style=\"padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold;\">${l.cantidad_pedida}</td>\n      <td style=\"padding: 8px; border: 1px solid #ddd; text-align: right;\">${subtotal.toFixed(2)} €</td>\n    </tr>`;\n}\n\nconst html = `\n  <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n    <div style=\"background-color: #2e7d32; color: white; padding: 20px; text-align: center;\">\n      <h2 style=\"margin: 0;\">🛒 Preparar pedido</h2>\n      <p style=\"margin: 5px 0 0 0;\">Cash Moisés - Pedido nº ${pedidoId}</p>\n    </div>\n    <div style=\"padding: 20px; background-color: #f9f9f9;\">\n      <p>Nuevo pedido de <strong>${cliente}</strong> recibido por WhatsApp. Hay stock para todo, hay que prepararlo:</p>\n      <table style=\"width: 100%; border-collapse: collapse; margin-top: 15px;\">\n        <thead>\n          <tr style=\"background-color: #333; color: white;\">\n            <th style=\"padding: 10px; text-align: left;\">Producto</th>\n            <th style=\"padding: 10px;\">Cantidad</th>\n            <th style=\"padding: 10px; text-align: right;\">Importe</th>\n          </tr>\n        </thead>\n        <tbody>${filas}</tbody>\n      </table>\n      <p style=\"text-align: right; margin-top: 15px;\"><strong>Total (sin IVA): ${total.toFixed(2)} €</strong></p>\n    </div>\n    <div style=\"padding: 15px; text-align: center; color: #888; font-size: 12px;\">\n      Generado automáticamente por n8n + Odoo\n    </div>\n  </div>`;\n\nconst asunto = `🛒 Preparar pedido nº ${pedidoId} - ${cliente}`;\n\nreturn { html, asunto };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        -528
+      ],
+      "id": "5a84768b-9e31-4cb4-8192-caa5f2112dd3",
+      "name": "Email a almacén"
+    },
+    {
+      "parameters": {
+        "sendTo": "pruebasn8nunitarias@gmail.com",
+        "subject": "={{ $json.asunto }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2400,
+        -528
+      ],
+      "id": "373b0f3f-c3c5-4c2c-aefd-f47e2b10cd95",
+      "name": "Gmail - Avisar a almacén",
+      "webhookId": "050d3d87-a057-4306-a177-8294caf5741e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "FrqaGsopIuqP2Cud",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3a6c3b44-c1f7-4a4c-8354-11702d41821d",
+              "leftValue": "={{ $json.product_id }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        -272
+      ],
+      "id": "7f9a875f-0c42-4f48-ba02-0a5050f7cb2d",
+      "name": "Descartar no encontrados"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Twilio Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Descartar no encontrados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Odoo - Buscar producto": {
+      "main": [
+        [
+          {
+            "node": "Preparar línea de pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar línea de pedido": {
+      "main": [
+        [
+          {
+            "node": "¿Hay stock suficiente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay stock suficiente?": {
+      "main": [
+        [
+          {
+            "node": "Juntar líneas con stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Juntar líneas sin stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar líneas con stock": {
+      "main": [
+        [
+          {
+            "node": "Construir pedido de venta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir pedido de venta": {
+      "main": [
+        [
+          {
+            "node": "Odoo - Crear pedido de venta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Odoo - Crear pedido de venta": {
+      "main": [
+        [
+          {
+            "node": "Mensaje de confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje de confirmación": {
+      "main": [
+        [
+          {
+            "node": "Twilio - Confirmar pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar líneas sin stock": {
+      "main": [
+        [
+          {
+            "node": "Construir orden de compra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir orden de compra": {
+      "main": [
+        [
+          {
+            "node": "Odoo - Crear orden de compra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Odoo - Crear orden de compra": {
+      "main": [
+        [
+          {
+            "node": "Mensaje de falta de stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje de falta de stock": {
+      "main": [
+        [
+          {
+            "node": "Twilio - Avisar falta de stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio - Avisar falta de stock": {
+      "main": [
+        [
+          {
+            "node": "Email a compras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email a compras": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Avisar a compras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio - Confirmar pedido": {
+      "main": [
+        [
+          {
+            "node": "Email a almacén",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email a almacén": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Avisar a almacén",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descartar no encontrados": {
+      "main": [
+        [
+          {
+            "node": "Odoo - Buscar producto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e81e3726-3f1a-431d-adb9-f52ea2b00a0e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01e23cf526609664b78860f3eb78ce99c74dd873ec74fb39e1f58e4bf049945e"
+  },
+  "id": "BLTyVaKtHxkwNn2J",
+  "tags": []
+}
